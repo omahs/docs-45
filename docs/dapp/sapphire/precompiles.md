@@ -89,6 +89,98 @@ function encrypt(bytes32 key, bytes32 nonce, bytes memory text, bytes memory add
 }
 ```
 
+## Public/Private Key Pair Generation
+
+### Overview
+
+* Precompile address: `0x0100000000000000000000000000000000000005`
+* Input format: `uint method || uint seed_length || seed`
+* Return value format: `uint public_key_length || uint private_key_length || public_key || private_key`
+* Gas cost: method-dependent base cost, see below
+
+:::caution
+
+The seed should be padded to a multiple of 32 bytes.
+
+:::
+
+Available methods:
+* `0` - ed25519 (gas cost 35,000),
+* `1` - secp256k1 (gas cost 110,000)
+* `2` - sr25519 (gas cost 35,000)
+
+### Example
+
+Using the Sapphire library:
+
+```solidity
+bytes memory seed = hex"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+bytes memory publicKey;
+bytes memory privateKey;
+(publicKey, privateKey) = Sapphire.generateKeyPair(0, seed);
+```
+
+## Message Signing
+
+### Overview
+
+* Precompile address: `0x0100000000000000000000000000000000000006`
+* Input format: `uint method || uint private_key_length || uint context_length || uint message_length`
+  `|| private_key || context || message`
+* Gas cost: see below for the method-dependent base cost, plus 8 per byte of context and message.
+
+:::caution
+
+Each of the byte string parameters should be padded to a multiple of 32 bytes.
+
+:::
+
+Available methods:
+* `0` - ed25519 (gas cost 75,000),
+* `1` - secp256k1 (gas cost 150,000)
+* `2` - sr25519 (gas cost 50,000)
+
+### Example
+
+Using the Sapphire library:
+
+```solidity
+bytes memory publicKey = ...;
+bytes memory privateKey = ...;
+bytes memory signature = Sapphire.signMessageWithContext(0, privateKey, "message context", "message to sign");
+```
+
+## Signature Verification
+
+### Overview
+
+* Precompile address: `0x0100000000000000000000000000000000000007`
+* Input format: `uint method || uint public_key_length || uint signature_length || uint context_length || uint message_length`
+  `|| public_key || signature || context || message`
+* Gas cost: see below for the method-dependent base cost, plus 8 per byte of context and message.
+
+:::caution
+
+Each of the byte string parameters should be padded to a multiple of 32 bytes.
+
+:::
+
+Available methods:
+* `0` - ed25519 (gas cost 110,000),
+* `1` - secp256k1 (gas cost 210,000)
+* `2` - sr25519 (gas cost 110,000)
+
+### Example
+
+Using the Sapphire library:
+
+```solidity
+bytes memory publicKey = ...;
+bytes memory privateKey = ...;
+bytes memory signature = ...;
+bool result = Sapphire.verifySignatureWithContext(0, publicKey, signature, "message context", "message to check");
+```
+
 ## Library
 
 The examples above show how to call the precompiles directly. For a more
